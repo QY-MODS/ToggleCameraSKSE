@@ -1,4 +1,4 @@
-
+#include "Events.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
@@ -6,6 +6,17 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
     }
     if (message->type == SKSE::MessagingInterface::kNewGame || message->type == SKSE::MessagingInterface::kPostLoadGame) {
         // Post-load
+        auto* eventsink = OurEventSink::GetSingleton();
+        logger::info("Adding event sink for dialogue menu zoom.");
+        RE::BSInputDeviceManager::GetSingleton()->AddEventSink(eventsink);
+        auto* ui = RE::UI::GetSingleton();
+        if (auto* ui = RE::UI::GetSingleton(); ui) {
+            logger::info("Adding event sink for dialogue menu auto zoom.");
+            ui->AddEventSink<RE::MenuOpenCloseEvent>(eventsink);
+        }
+        // MCP
+        MCP::Register();
+        logger::info("MCP registered.");
     }
 }
 
@@ -33,5 +44,8 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     SetupLog();
     logger::info("Plugin loaded");
     SKSE::Init(skse);
+    Settings::LoadSettings();
+    SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
+    Hooks::Install();
     return true;
 }

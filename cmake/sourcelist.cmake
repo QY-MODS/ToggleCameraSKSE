@@ -5,4 +5,6 @@ set(sources ${sources}
 	src/Settings.cpp
 	src/Manager.cpp
 	src/Hooks.cpp
+	src/UI.cpp
+	src/Serialization.cpp
 )
