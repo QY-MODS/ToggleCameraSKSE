@@ -24,7 +24,7 @@ struct Feature {
 	bool enabled=false;
 	bool instant=false;
 	bool invert=false;
-	bool revert=false;
+	bool revert=true;
 
 	Purpose purpose = kNone;
     std::map<int, int> keymap;
@@ -33,6 +33,10 @@ struct Feature {
 		for (int i = 0; i < SupportedDevices.size(); ++i) {
             keymap[i] = -1;
         }
+	};
+
+	operator bool() const {
+		return enabled;
 	};
 };
 
@@ -67,6 +71,26 @@ namespace Modules {
         inline Feature ToggleMagicWield;
         inline Feature ToggleMagicCast;
         inline Feature ToggleSneak;
+
+		inline bool listen_gradual_zoom = false;
+        inline float savedZoomOffset = 0.2f;
+
+		// combat trigger stuff
+		inline uint32_t oldstate_c = 0;
+        // weapon draw stuff
+        inline uint32_t oldstate_w = 0;
+        // magic stuff
+        inline uint32_t oldstate_m = 0;
+
+		// bunlara priority veriyom
+		inline bool bow_cam_switched = false;
+		inline bool casting_switched = false;
+
+		bool Is3rdP();
+
+		void funcToggle(bool gradual, float extra_offset = 0.f);
+
+		uint32_t CamSwitchHandling(uint32_t newstate, bool third2first, bool switch_back);
 		
 		void LoadFeatures();
     };

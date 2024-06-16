@@ -89,6 +89,66 @@ void Modules::Dialogue::LoadFeatures(){
 };
 
 
+bool Modules::Combat::Is3rdP() {
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c) {
+    	logger::error("PlayerCamera is null.");
+		return false;
+    }
+    if (plyr_c->IsInFirstPerson()) return false;
+    auto thirdPersonState =
+        static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (thirdPersonState->targetZoomOffset != thirdPersonState->currentZoomOffset &&
+        thirdPersonState->targetZoomOffset == -0.2f && listen_gradual_zoom) {
+        return false;
+    }
+    else return plyr_c->IsInThirdPerson();
+}
+
+void Modules::Combat::funcToggle(bool gradual, float extra_offset) {
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c) {
+		logger::error("PlayerCamera is null.");
+        return;
+    }
+    bool is3rdP = Is3rdP();
+    listen_gradual_zoom = false;
+    auto thirdPersonState =
+        static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (!thirdPersonState) {
+        logger::error("ThirdPersonState is null.");
+        return;
+    }
+    if (!is3rdP) {
+        plyr_c->ForceThirdPerson();
+        thirdPersonState->targetZoomOffset = savedZoomOffset + extra_offset;
+    } 
+    else if (gradual) {
+        listen_gradual_zoom = true;
+        thirdPersonState->targetZoomOffset = -0.2f;
+    } 
+    else plyr_c->ForceFirstPerson();
+}
+
+uint32_t Modules::Combat::CamSwitchHandling(uint32_t newstate, bool third2first, bool switch_back) { 
+    // Toggle i call lamali miyiz ona bakiyoruz
+    const bool is_3rd_p = Is3rdP();
+    bool player_is_in_toggled_cam = third2first ? !is_3rd_p : is_3rd_p;
+
+    if (newstate) {
+        if (player_is_in_toggled_cam) {
+            return 0;
+        }
+    } else {
+        if (!player_is_in_toggled_cam) {
+            return 0;
+        } else if (!switch_back) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void Modules::Combat::LoadFeatures() {
     ToggleCombat.enabled = true;
     ToggleWeapon.enabled = true;

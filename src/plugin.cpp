@@ -9,7 +9,6 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
         auto* eventsink = OurEventSink::GetSingleton();
         logger::info("Adding event sink for dialogue menu zoom.");
         RE::BSInputDeviceManager::GetSingleton()->AddEventSink(eventsink);
-        auto* ui = RE::UI::GetSingleton();
         if (auto* ui = RE::UI::GetSingleton(); ui) {
             logger::info("Adding event sink for dialogue menu auto zoom.");
             ui->AddEventSink<RE::MenuOpenCloseEvent>(eventsink);

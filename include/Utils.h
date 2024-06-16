@@ -44,4 +44,10 @@ namespace Utilities {
         bool IsOpen(const std::string_view menuname);
     };
 
+    bool IsMagicEquipped();
+
+    bool IsCasting();
+
+    inline uint32_t GetCombatState() { return RE::PlayerCharacter::GetSingleton()->IsInCombat(); }
+
 };

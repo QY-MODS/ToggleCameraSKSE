@@ -30,15 +30,15 @@ void OurEventSink::_HandleDialogueInputs(RE::ButtonEvent* a_event) {
     if (isPressed) {
         if (purpose == kZoomEnable)
             Modules::Dialogue::zoom_enabled = true;
-        else if (purpose == kZoomIn && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable.enabled)) {
+        else if (purpose == kZoomIn && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable)) {
             Modules::Dialogue::funcZoom(_device, true);
-        } else if (purpose == kZoomOut && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable.enabled)) {
+        } else if (purpose == kZoomOut && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable)) {
             Modules::Dialogue::funcZoom(_device, false);
         }
     } else if (isReleased) {
         if (purpose == kZoomEnable)
             Modules::Dialogue::zoom_enabled = false;
-        else if (purpose == kToggle && Modules::Dialogue::Toggle.enabled)
+        else if (purpose == kToggle && Modules::Dialogue::Toggle)
             _toggle = true;
     }
     if (_toggle) {
@@ -52,7 +52,7 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(const RE::MenuOpenCloseEvent
     if (!event) return RE::BSEventNotifyControl::kContinue;
     if (!Modules::Dialogue::listen_auto_zoom) return RE::BSEventNotifyControl::kContinue;
     if (event->menuName != RE::DialogueMenu::MENU_NAME) return RE::BSEventNotifyControl::kContinue;
-    if (!Modules::Dialogue::AutoToggle.enabled) return RE::BSEventNotifyControl::kContinue;
+    if (!Modules::Dialogue::AutoToggle) return RE::BSEventNotifyControl::kContinue;
 
     if (event->opening) {
         if (RE::PlayerCamera::GetSingleton()->IsInThirdPerson() && !Modules::Dialogue::AutoToggle.invert) {
@@ -91,7 +91,6 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(RE::InputEvent* const* evns,
 
             float duration = a_event->heldDownSecs;
             bool isPressed = a_event->value != 0 && duration >= 0;
-            bool isReleased = a_event->value == 0 && duration != 0;
 
             if (isPressed) {
                 MCP::listen_key = false;
