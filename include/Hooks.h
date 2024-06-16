@@ -26,6 +26,14 @@ namespace Combat {
 	struct OnActorUpdate {
         static void thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* a_cell);
 		static inline REL::Relocation<decltype(thunk)> func;
+
+        inline bool magic_switched = false;
+        inline bool bow_switched = false;
+
+        static bool __Killmove(RE::Actor* a_actor);
+        static bool __WeaponDraw(RE::Actor* a_actor);
+        static bool __BowDraw(RE::Actor* a_actor);
+        static bool __MagicDraw(RE::Actor* a_actor);
 	};
 
 	void InstallHooks();

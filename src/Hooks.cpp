@@ -53,21 +53,10 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
     }
 
     // killmove handling
-    if (a_actor->IsInKillMove()) {
-        oldstate_c = 1;
-        return func(a_actor, a_zPos, a_cell);
-    } else if (RE::PlayerCamera::GetSingleton()->IsInBleedoutMode()) {
-        return func(a_actor, a_zPos, a_cell);
-    }
+    if (!__Killmove(a_actor)) return func(a_actor, a_zPos, a_cell);
 
     // weapon draw handling
-    if (ToggleWeapon && !IsMagicEquipped()) {
-        auto weapon_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
-        if ((!weapon_state || weapon_state == 3) && oldstate_w != weapon_state) {
-            oldstate_w = weapon_state;
-            shouldToggle += CamSwitchHandling(oldstate_w, ToggleWeapon.invert, ToggleWeapon.revert);
-        }
-    }
+    if (ToggleWeapon && !IsMagicEquipped() && __WeaponDraw(a_actor)) shouldToggle += 1;
 
     // combat handling
     if (ToggleCombat && GetCombatState() != oldstate_c && !bow_cam_switched && !casting_switched) {
@@ -76,36 +65,12 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
     }
 
     // bow first person aiming handling
-    if (ToggleBowDraw) {
-        auto attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
-        bool is_3rd_p = Is3rdP();
-        if (bool player_is_in_toggled_cam = ToggleBowDraw.invert ? is_3rd_p : !is_3rd_p; player_is_in_toggled_cam && attack_state == 8) {
-            funcToggle();
-            bow_cam_switched = true;
-            return func(a_actor, a_zPos, a_cell);
-        } else if (bow_cam_switched && (!attack_state || attack_state == 13) && !is_3rd_p && ToggleBowDraw.revert) {
-            funcToggle();
-            bow_cam_switched = false;
-            return func(a_actor, a_zPos, a_cell);
-        }
-    }
+    if (ToggleBowDraw && !__BowDraw(a_actor)) return func(a_actor, a_zPos, a_cell);
 
     // magic draw and casting handling
     if (IsMagicEquipped()) {
         // magic draw handling
-        auto magic_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
-        if (ToggleMagicWield && oldstate_m != magic_state) {
-            oldstate_m = magic_state;
-            if ((!magic_state || magic_state == 5) && !Is3rdP() && magic_switched && settings->os[1].second) {
-                funcToggle();
-                magic_switched = false;
-                return func(a_actor, a_zPos, a_cell);
-            } else if ((magic_state == 2 || magic_state == 3) && Is3rdP()) {
-                funcToggle();
-                magic_switched = true;
-                return func(a_actor, a_zPos, a_cell);
-            }
-        }
+        if (ToggleMagicWield && !__MagicDraw(a_actor)) return func(a_actor, a_zPos, a_cell);
         // magic casting handling
         if (settings->main[5].second) {
             if (IsCasting() && Is3rdP() && (!casting_switched || !settings->os[1].second)) {
@@ -124,6 +89,60 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
     if (shouldToggle) funcToggle();
 
     return func(a_actor, a_zPos, a_cell);
+}
+
+bool Combat::OnActorUpdate::__Killmove(RE::Actor* a_actor) {
+    if (a_actor->IsInKillMove()) {
+        oldstate_c = 1;
+        return false;
+    } else if (RE::PlayerCamera::GetSingleton()->IsInBleedoutMode()) {
+        return false;
+    }
+    return true;
+}
+
+bool Combat::OnActorUpdate::__WeaponDraw(RE::Actor* a_actor) { 
+    auto weapon_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
+    if ((!weapon_state || weapon_state == 3) && oldstate_w != weapon_state) {
+        oldstate_w = weapon_state;
+        return CamSwitchHandling(oldstate_w, ToggleWeapon.invert, ToggleWeapon.revert) > 0;
+    }
+    return false;
+}
+
+bool Combat::OnActorUpdate::__BowDraw(RE::Actor* a_actor) {
+    auto attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
+    bool is_3rd_p = Is3rdP();
+    if (bool player_is_in_toggled_cam = ToggleBowDraw.invert ? is_3rd_p : !is_3rd_p;
+        !player_is_in_toggled_cam && attack_state == 8) {
+        funcToggle();
+        bow_cam_switched = true;
+        return false;
+    } else if (bow_cam_switched && (!attack_state || attack_state == 13) && player_is_in_toggled_cam && ToggleBowDraw.revert) {
+        funcToggle();
+        bow_cam_switched = false;
+        return false;
+    }
+    return true;
+}
+
+bool Combat::OnActorUpdate::__MagicDraw(RE::Actor* a_actor) {
+    auto magic_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
+    if (ToggleMagicWield && oldstate_m != magic_state) {
+        oldstate_m = magic_state;
+        bool is_3rd_p = Is3rdP();
+        if (bool player_is_in_toggled_cam = ToggleMagicWield.invert ? is_3rd_p : !is_3rd_p;
+        if ((!magic_state || magic_state == 5) && player_is_in_toggled_cam && magic_switched) {
+            funcToggle();
+            magic_switched = false;
+            return false;
+        } else if ((magic_state == 2 || magic_state == 3) && !player_is_in_toggled_cam) {
+            funcToggle();
+            magic_switched = true;
+            return false;
+        }
+    }
+    return true;
 }
 
 void Combat::InstallHooks() {}
