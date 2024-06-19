@@ -74,7 +74,53 @@ Purpose Modules::Dialogue::GetPurpose(int a_device, int keyMask) {
     return failed;
 }
 
-void Modules::Dialogue::LoadFeatures(){
+void Modules::Dialogue::to_json(const Feature& f, const std::string& filename) {
+    rapidjson::Document doc;
+    doc.SetObject();
+
+    // Add values to the JSON object
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+
+    Value dialogue(kObjectType);
+    
+    Value toggle(kObjectType);
+
+    toggle.AddMember("Enabled", f.enabled, allocator);
+    toggle.AddMember("Instant", f.instant, allocator);
+    toggle.AddMember("Invert", f.invert, allocator);
+    toggle.AddMember("Revert", f.revert, allocator);
+
+    Value keymap(kObjectType);
+    for (const auto& [device, key] : f.keymap) {
+        std::string deviceStr = std::to_string(device);
+        Value jsonKey(deviceStr.c_str(), allocator);
+        Value jsonValue;
+        jsonValue.SetInt(key);  // Assuming Key has an integer member 'value'
+        keymap.AddMember(jsonKey, jsonValue, allocator);
+    }
+
+    toggle.AddMember("Keymap", keymap, allocator);
+
+    dialogue.AddMember("Toggle", toggle, allocator);
+
+    doc.AddMember("dialogue", dialogue, allocator);
+
+    // Convert JSON document to string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    // Write JSON to file
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+    ofs << buffer.GetString() << std::endl;
+    ofs.close();
+}
+
+void Modules::Dialogue::LoadFeatures() {
 	Toggle.enabled = true;
 	Toggle.instant = false;
     
@@ -86,8 +132,13 @@ void Modules::Dialogue::LoadFeatures(){
     ZoomEnable.keymap = {{0, 29}, {1, -1}, {2, 64}};
     ZoomIn.keymap = {{0, -1}, {1, 8}, {2, 10}};
     ZoomOut.keymap = {{0, -1}, {1, 9}, {2, 512}};
-};
 
+    std::string asd = std::format("Data/SKSE/Plugins/{}/Settings.json",Utilities::mod_name);
+    // if the folder doesn't exist, create it
+    std::filesystem::create_directories(std::filesystem::path(asd).parent_path());
+    to_json(Toggle, asd);
+
+};
 
 bool Modules::Combat::Is3rdP() {
     auto plyr_c = RE::PlayerCamera::GetSingleton();
@@ -130,7 +181,7 @@ void Modules::Combat::funcToggle(bool gradual, float extra_offset) {
     else plyr_c->ForceFirstPerson();
 }
 
-uint32_t Modules::Combat::CamSwitchHandling(uint32_t newstate, bool third2first, bool switch_back) { 
+uint32_t Modules::Combat::CamSwitchHandling(const uint32_t newstate, const bool third2first, const bool switch_back) { 
     // Toggle i call lamali miyiz ona bakiyoruz
     const bool is_3rd_p = Is3rdP();
     bool player_is_in_toggled_cam = third2first ? !is_3rd_p : is_3rd_p;

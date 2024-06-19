@@ -22,11 +22,16 @@ namespace MCP {
     
     namespace Dialogue {
         void Render();
-
-
         namespace Toggle{
             inline int selected_device = 0;
         };
 	};
     
+    namespace Combat {
+        using namespace Modules::Combat;
+        void Render();
+
+        void __Render(bool& enabled, bool& invert, bool& revert, bool& instant, const std::string& title,
+                      const std::string& label);
+    };
 };

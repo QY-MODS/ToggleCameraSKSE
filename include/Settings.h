@@ -42,6 +42,8 @@ struct Feature {
 
 namespace Modules {
 
+	using namespace rapidjson;
+
 	namespace Dialogue {
 		// Features
 		inline Feature Toggle;
@@ -59,6 +61,7 @@ namespace Modules {
 
 		Purpose GetPurpose(int a_device, int keyMask);
 
+		void to_json(const Feature& f, const std::string& filename);
 		void LoadFeatures();
 	
 	};

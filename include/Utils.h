@@ -15,6 +15,8 @@
 
 #include "SimpleIni.h"
 #include "rapidjson/document.h"
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include "SKSEMenuFramework.h"
 #include <ClibUtil/editorID.hpp>
 
@@ -42,6 +44,7 @@ namespace Utilities {
     namespace Menu {
 
         bool IsOpen(const std::string_view menuname);
+
     };
 
     bool IsMagicEquipped();

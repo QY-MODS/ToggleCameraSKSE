@@ -72,7 +72,8 @@ void MCP::Register(){
 }
 
 void __stdcall MCP::RenderSettings(){
-    Dialogue::Render(); 
+    Dialogue::Render();
+    Combat::Render();
 };
 
 void MCP::Dialogue::Render(){
@@ -113,3 +114,30 @@ void MCP::Dialogue::Render(){
     }
     
 };
+
+void MCP::Combat::Render() {
+
+    std::string title = "Combat";
+    if (ImGui::CollapsingHeader((title + "##Settings").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        __Render(ToggleCombat.enabled, ToggleCombat.invert, ToggleCombat.revert,ToggleCombat.instant, title, "ToggleCombatEnter");
+        __Render(ToggleWeapon.enabled, ToggleWeapon.invert, ToggleWeapon.revert,ToggleWeapon.instant, title, "ToggleWeaponDraw");
+        __Render(ToggleBowDraw.enabled, ToggleBowDraw.invert, ToggleBowDraw.revert,ToggleBowDraw.instant, title, "ToggleBowDraw");
+        __Render(ToggleMagicWield.enabled, ToggleMagicWield.invert, ToggleMagicWield.revert, ToggleMagicWield.instant,title,"ToggleMagicWield");
+        __Render(ToggleMagicCast.enabled, ToggleMagicCast.invert, ToggleMagicCast.revert, ToggleMagicCast.instant,title,"ToggleMagicCast");
+
+    }
+}
+
+void MCP::Combat::__Render(bool& enabled, bool& invert, bool& revert, bool& instant, const std::string& title,
+                           const std::string& label) {
+    ImGui::Checkbox((label + "##" + title).c_str(), &enabled);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(270);
+    ImGui::Text("");
+    ImGui::SameLine();
+    ImGui::Checkbox((std::string("Invert") + "##" + title+label).c_str(), &invert);
+    ImGui::SameLine();
+    ImGui::Checkbox((std::string("Revert") + "##" + title + label).c_str(), &revert);
+    ImGui::SameLine();
+    ImGui::Checkbox((std::string("Instant") + "##" + title + label).c_str(), &instant);
+}
