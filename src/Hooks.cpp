@@ -65,7 +65,7 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
     }
 
     // weapon draw handling
-    if (ToggleWeapon && !IsMagicEquipped() && __WeaponDraw(a_actor)) {
+    if (ToggleWeapon && (!IsMagicEquipped() || !ToggleMagicWield) && __WeaponDraw(a_actor)) {
         logger::trace("Weapon draw detected. Should toggle.");
         shouldToggle += 1;
         gradual_ = gradual_ ? gradual_ : !ToggleWeapon.instant;
