@@ -7,7 +7,61 @@ void Settings::LoadDefaults(){
 }
 void Settings::LoadSettings(){
     LoadDefaults();
-	//LoadFromJson("Data/SKSE/Plugins/DialogueCam.json");
+
+    std::string filename = Settings::path;
+
+    if (!std::filesystem::exists(filename)) {
+        logger::info("Settings file does not exist. Creating default settings.");
+        SaveSettings();
+        return;
+    }
+
+    std::ifstream ifs(filename);
+    if (!ifs.is_open()) {
+        logger::error("Failed to open file for reading: {}", filename);
+        return;
+    }
+
+    rapidjson::IStreamWrapper isw(ifs);
+    rapidjson::Document doc;
+    doc.ParseStream(isw);
+    if (doc.HasParseError()) {
+		logger::error("Failed to parse JSON settings file: {}", filename);
+		return;
+	}
+    if (doc.HasMember("dialogue")) Modules::Dialogue::from_json(doc["dialogue"]);
+	if (doc.HasMember("combat")) Modules::Combat::from_json(doc["combat"]);
+	if (doc.HasMember("other")) Modules::Other::from_json(doc["other"]);
+
+    ifs.close();
+
+    logger::info("Settings loaded from file: {}", filename);
+}
+void Settings::SaveSettings(){
+    rapidjson::Document doc;
+    doc.SetObject();
+
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+
+    doc.AddMember("dialogue", Modules::Dialogue::to_json(allocator), allocator);
+    doc.AddMember("combat", Modules::Combat::to_json(allocator), allocator);
+    doc.AddMember("other", Modules::Other::to_json(allocator), allocator);
+
+    // Convert JSON document to string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    // Write JSON to file
+    std::string filename = Settings::path;
+    std::filesystem::create_directories(std::filesystem::path(filename).parent_path());
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) {
+        logger::error("Failed to open file for writing: {}", filename);
+        return;
+    }
+    ofs << buffer.GetString() << std::endl;
+    ofs.close();
 };
 
 void Modules::Dialogue::funcToggle() {
@@ -53,7 +107,7 @@ void Modules::Dialogue::funcZoom(int a_device, bool _in) {
     float amount = (a_device % 2) ? 0.1f : 0.025f;
     if (_in) {
         if (is_in_first);
-        else if (thirdPersonState->currentZoomOffset < -0.19f) player_cam->ForceFirstPerson();
+        else if (thirdPersonState->currentZoomOffset < -0.19f && !DisallowZoomPOVSwitch.enabled) player_cam->ForceFirstPerson();
         else thirdPersonState->targetZoomOffset = std::max(thirdPersonState->targetZoomOffset - amount, -0.2f);
     } 
     else if (is_in_first) player_cam->ForceThirdPerson();
@@ -74,7 +128,46 @@ Purpose Modules::Dialogue::GetPurpose(int a_device, int keyMask) {
     return failed;
 }
 
-void Modules::Dialogue::LoadFeatures(){
+rapidjson::Value Modules::Dialogue::to_json(Document::AllocatorType& a) {
+    Value dialogue(kObjectType);
+
+    Value toggle(kObjectType);
+    Toggle.to_json(toggle, a);
+    dialogue.AddMember("Toggle", toggle, a);
+
+    Value zoom_enable(kObjectType);
+    ZoomEnable.to_json(zoom_enable, a);
+    dialogue.AddMember("ZoomEnable", zoom_enable, a);
+
+    Value zoom_in(kObjectType);
+    ZoomIn.to_json(zoom_in, a);
+    dialogue.AddMember("ZoomIn", zoom_in, a);
+
+    Value zoom_out(kObjectType);
+    ZoomOut.to_json(zoom_out, a);
+    dialogue.AddMember("ZoomOut", zoom_out, a);
+
+    Value auto_toggle(kObjectType);
+    AutoToggle.to_json(auto_toggle, a);
+    dialogue.AddMember("AutoToggle", auto_toggle, a);
+
+    Value disallow_zoom_pov_switch(kObjectType);
+    DisallowZoomPOVSwitch.to_json(disallow_zoom_pov_switch, a);
+    dialogue.AddMember("DisallowZoomPOVSwitch", disallow_zoom_pov_switch, a);
+
+    return dialogue;
+}
+
+void Modules::Dialogue::from_json(const rapidjson::Value& j) {
+    if (j.HasMember("Toggle")) Toggle.from_json(j["Toggle"]);
+	if (j.HasMember("ZoomEnable")) ZoomEnable.from_json(j["ZoomEnable"]);
+	if (j.HasMember("ZoomIn")) ZoomIn.from_json(j["ZoomIn"]);
+	if (j.HasMember("ZoomOut")) ZoomOut.from_json(j["ZoomOut"]);
+	if (j.HasMember("AutoToggle")) AutoToggle.from_json(j["AutoToggle"]);
+	if (j.HasMember("DisallowZoomPOVSwitch")) DisallowZoomPOVSwitch.from_json(j["DisallowZoomPOVSwitch"]);
+}
+
+void Modules::Dialogue::LoadFeatures() {
 	Toggle.enabled = true;
 	Toggle.instant = false;
     
@@ -82,12 +175,114 @@ void Modules::Dialogue::LoadFeatures(){
 	ZoomIn.enabled = true;
 	ZoomOut.enabled = true;
 
+    DisallowZoomPOVSwitch.enabled = false;
+
     Toggle.keymap = {{0, 33}, {1, -1}, {2, 128}};
     ZoomEnable.keymap = {{0, 29}, {1, -1}, {2, 64}};
     ZoomIn.keymap = {{0, -1}, {1, 8}, {2, 10}};
     ZoomOut.keymap = {{0, -1}, {1, 9}, {2, 512}};
+
 };
 
+bool Modules::Combat::Is3rdP() {
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c) {
+    	logger::error("PlayerCamera is null.");
+		return false;
+    }
+    if (plyr_c->IsInFirstPerson()) return false;
+    auto thirdPersonState =
+        static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (thirdPersonState->targetZoomOffset != thirdPersonState->currentZoomOffset &&
+        thirdPersonState->targetZoomOffset == -0.2f && listen_gradual_zoom) {
+        return false;
+    }
+    else return plyr_c->IsInThirdPerson();
+}
+
+void Modules::Combat::funcToggle(bool gradual, float extra_offset) {
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c) {
+		logger::error("PlayerCamera is null.");
+        return;
+    }
+    bool is3rdP = Is3rdP();
+    listen_gradual_zoom = false;
+    auto thirdPersonState =
+        static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (!thirdPersonState) {
+        logger::error("ThirdPersonState is null.");
+        return;
+    }
+    if (!is3rdP) {
+        plyr_c->ForceThirdPerson();
+        thirdPersonState->targetZoomOffset = savedZoomOffset + extra_offset;
+    } 
+    else if (gradual) {
+        listen_gradual_zoom = true;
+        thirdPersonState->targetZoomOffset = -0.2f;
+    } 
+    else plyr_c->ForceFirstPerson();
+}
+
+uint32_t Modules::Combat::CamSwitchHandling(const uint32_t newstate, const bool third2first, const bool switch_back) { 
+    // Toggle i call lamali miyiz ona bakiyoruz
+    const bool is_3rd_p = Is3rdP();
+    bool player_is_in_toggled_cam = third2first ? !is_3rd_p : is_3rd_p;
+
+    if (newstate) {
+        if (player_is_in_toggled_cam) {
+            return 0;
+        }
+    } else {
+        if (!player_is_in_toggled_cam) {
+            return 0;
+        } else if (!switch_back) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+rapidjson::Value Modules::Combat::to_json(Document::AllocatorType& a) { 
+    Value combat(kObjectType);
+
+	Value toggle_combat(kObjectType);
+	ToggleCombat.to_json(toggle_combat, a);
+	combat.AddMember("ToggleCombat", toggle_combat, a);
+
+	Value toggle_weapon(kObjectType);
+	ToggleWeapon.to_json(toggle_weapon, a);
+	combat.AddMember("ToggleWeapon", toggle_weapon, a);
+
+	Value toggle_bow_draw(kObjectType);
+	ToggleBowDraw.to_json(toggle_bow_draw, a);
+	combat.AddMember("ToggleBowDraw", toggle_bow_draw, a);
+
+	Value toggle_magic_wield(kObjectType);
+	ToggleMagicWield.to_json(toggle_magic_wield, a);
+	combat.AddMember("ToggleMagicWield", toggle_magic_wield, a);
+
+	Value toggle_magic_cast(kObjectType);
+	ToggleMagicCast.to_json(toggle_magic_cast, a);
+	combat.AddMember("ToggleMagicCast", toggle_magic_cast, a);
+
+	Value toggle_sneak(kObjectType);
+	ToggleSneak.to_json(toggle_sneak, a);
+	combat.AddMember("ToggleSneak", toggle_sneak, a);
+
+	return combat;
+}
+
+void Modules::Combat::from_json(const rapidjson::Value& j) {
+    if (j.HasMember("ToggleCombat")) ToggleCombat.from_json(j["ToggleCombat"]);
+	if (j.HasMember("ToggleWeapon")) ToggleWeapon.from_json(j["ToggleWeapon"]);
+	if (j.HasMember("ToggleBowDraw")) ToggleBowDraw.from_json(j["ToggleBowDraw"]);
+	if (j.HasMember("ToggleMagicWield")) ToggleMagicWield.from_json(j["ToggleMagicWield"]);
+	if (j.HasMember("ToggleMagicCast")) ToggleMagicCast.from_json(j["ToggleMagicCast"]);
+	if (j.HasMember("ToggleSneak")) ToggleSneak.from_json(j["ToggleSneak"]);
+
+}
 
 void Modules::Combat::LoadFeatures() {
     ToggleCombat.enabled = true;
@@ -98,13 +293,81 @@ void Modules::Combat::LoadFeatures() {
     ToggleSneak.enabled = true;
 }
 
+void Modules::Other::funcToggle(bool is3rdP, float extra_offset){
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c) {
+        logger::error("PlayerCamera is null.");
+        return;
+    }
+    auto thirdPersonState =
+        static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (!thirdPersonState) {
+        logger::error("ThirdPersonState is null.");
+        return;
+    }
+    if (!is3rdP) {
+        const auto savedZoomOffset = thirdPersonState->savedZoomOffset;
+        plyr_c->ForceThirdPerson();
+        thirdPersonState->targetZoomOffset = savedZoomOffset + extra_offset;
+    } else plyr_c->ForceFirstPerson();
+};
+
+rapidjson::Value Modules::Other::to_json(Document::AllocatorType& a) { 
+    Value other(kObjectType);
+
+	Value toggle_cell_change_exterior(kObjectType);
+	ToggleCellChangeExterior.to_json(toggle_cell_change_exterior, a);
+	other.AddMember("ToggleCellChangeExterior", toggle_cell_change_exterior, a);
+
+	Value toggle_cell_change_interior(kObjectType);
+	ToggleCellChangeInterior.to_json(toggle_cell_change_interior, a);
+	other.AddMember("ToggleCellChangeInterior", toggle_cell_change_interior, a);
+
+	Value fix_zoom_(kObjectType);
+    FixZoom.to_json(fix_zoom_, a);
+    other.AddMember("FixZoom", fix_zoom_, a);
+
+	return other;
+}
+
+void Modules::Other::from_json(const rapidjson::Value& j) {
+    if (j.HasMember("ToggleCellChangeExterior")) ToggleCellChangeExterior.from_json(j["ToggleCellChangeExterior"]);
+	if (j.HasMember("ToggleCellChangeInterior")) ToggleCellChangeInterior.from_json(j["ToggleCellChangeInterior"]);
+	if (j.HasMember("FixZoom")) FixZoom.from_json(j["FixZoom"]);
+}
+
 void Modules::Other::LoadFeatures() {
-    ToggleCellChangeInterior.enabled = false;
-    ToggleCellChangeInterior.instant = false;
-    
     ToggleCellChangeExterior.enabled = false;
     ToggleCellChangeExterior.instant = false;
 
-    DisallowPOVSwitch.enabled = false;
+    ToggleCellChangeInterior.enabled = false;
+    ToggleCellChangeInterior.instant = false;
+    
     FixZoom.enabled = false;
+}
+
+void Feature::to_json(rapidjson::Value& j, rapidjson::Document::AllocatorType& a) const {
+    j.AddMember("enabled", enabled, a);
+    j.AddMember("instant", instant, a);
+    j.AddMember("invert", invert, a);
+    j.AddMember("revert", revert, a);
+    rapidjson::Value keymap_array(rapidjson::kArrayType);
+    for (const auto& [device, key] : keymap) {
+        rapidjson::Value keymap_obj(rapidjson::kObjectType);
+        keymap_obj.AddMember("device", device, a);
+        keymap_obj.AddMember("key", key, a);
+        keymap_array.PushBack(keymap_obj, a);
+    }
+    j.AddMember("keymap", keymap_array, a);
+}
+
+void Feature::from_json(const rapidjson::Value& j) {
+    enabled = j["enabled"].GetBool();
+    instant = j["instant"].GetBool();
+    invert = j["invert"].GetBool();
+    revert = j["revert"].GetBool();
+    const rapidjson::Value& keymap_array = j["keymap"];
+    for (const auto& keymap_obj : keymap_array.GetArray()) {
+        keymap[keymap_obj["device"].GetInt()] = keymap_obj["key"].GetInt();
+    }
 }

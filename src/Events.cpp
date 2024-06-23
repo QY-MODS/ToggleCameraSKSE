@@ -17,7 +17,7 @@ void OurEventSink::_HandleDialogueInputs(RE::ButtonEvent* a_event) {
     // check if _device is supported
     if (std::find(SupportedDevices.begin(), SupportedDevices.end(), _device) == SupportedDevices.end()) return;
 
-    logger::trace("Device: {}, KeyMask: {}", _device, keyMask);
+    //logger::trace("Device: {}, KeyMask: {}", _device, keyMask);
 
     const auto purpose = Modules::Dialogue::GetPurpose(_device, keyMask);
     if (purpose == kNone) return;
@@ -30,15 +30,15 @@ void OurEventSink::_HandleDialogueInputs(RE::ButtonEvent* a_event) {
     if (isPressed) {
         if (purpose == kZoomEnable)
             Modules::Dialogue::zoom_enabled = true;
-        else if (purpose == kZoomIn && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable.enabled)) {
+        else if (purpose == kZoomIn && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable)) {
             Modules::Dialogue::funcZoom(_device, true);
-        } else if (purpose == kZoomOut && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable.enabled)) {
+        } else if (purpose == kZoomOut && (Modules::Dialogue::zoom_enabled || !Modules::Dialogue::ZoomEnable)) {
             Modules::Dialogue::funcZoom(_device, false);
         }
     } else if (isReleased) {
         if (purpose == kZoomEnable)
             Modules::Dialogue::zoom_enabled = false;
-        else if (purpose == kToggle && Modules::Dialogue::Toggle.enabled)
+        else if (purpose == kToggle && Modules::Dialogue::Toggle)
             _toggle = true;
     }
     if (_toggle) {
@@ -52,7 +52,7 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(const RE::MenuOpenCloseEvent
     if (!event) return RE::BSEventNotifyControl::kContinue;
     if (!Modules::Dialogue::listen_auto_zoom) return RE::BSEventNotifyControl::kContinue;
     if (event->menuName != RE::DialogueMenu::MENU_NAME) return RE::BSEventNotifyControl::kContinue;
-    if (!Modules::Dialogue::AutoToggle.enabled) return RE::BSEventNotifyControl::kContinue;
+    if (!Modules::Dialogue::AutoToggle) return RE::BSEventNotifyControl::kContinue;
 
     if (event->opening) {
         if (RE::PlayerCamera::GetSingleton()->IsInThirdPerson() && !Modules::Dialogue::AutoToggle.invert) {
@@ -91,7 +91,6 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(RE::InputEvent* const* evns,
 
             float duration = a_event->heldDownSecs;
             bool isPressed = a_event->value != 0 && duration >= 0;
-            bool isReleased = a_event->value == 0 && duration != 0;
 
             if (isPressed) {
                 MCP::listen_key = false;
@@ -105,6 +104,53 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(RE::InputEvent* const* evns,
     }
 
     HandleDialogueInputs(evns);
+
+    return RE::BSEventNotifyControl::kContinue;
+}
+
+RE::BSEventNotifyControl OurEventSink::ProcessEvent(const RE::BGSActorCellEvent* a_event,
+                                                    RE::BSTEventSource<RE::BGSActorCellEvent>*) {
+
+    if (!a_event) return RE::BSEventNotifyControl::kContinue;
+
+    //logger::trace("ActorCellEvent: {}", a_event->cellID);
+    const RE::TESObjectCELL* cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(a_event->cellID);
+    if (!cell) return RE::BSEventNotifyControl::kContinue;
+    const bool is_interior = cell->IsInteriorCell();
+    const bool is_exterior = cell->IsExteriorCell();
+    if (!is_interior && !is_exterior || is_exterior && is_interior) return RE::BSEventNotifyControl::kContinue;
+    //logger::trace("Cell: {} is interior: {}, is exterior: {}", cell->GetFullName(), is_interior, is_exterior);
+
+    if (is_exterior == Modules::Other::is_exterior) return RE::BSEventNotifyControl::kContinue;
+    Modules::Other::is_exterior = is_exterior;
+    if (is_exterior && !Modules::Other::ToggleCellChangeExterior) return RE::BSEventNotifyControl::kContinue;
+    if (is_interior && !Modules::Other::ToggleCellChangeInterior) return RE::BSEventNotifyControl::kContinue;
+    const auto is3rdP = RE::PlayerCamera::GetSingleton()->IsInThirdPerson();
+    bool player_is_in_toggled_cam = true;
+    if (is_exterior) player_is_in_toggled_cam = Modules::Other::ToggleCellChangeExterior.invert ? !is3rdP : is3rdP;
+	else if (is_interior) player_is_in_toggled_cam = Modules::Other::ToggleCellChangeInterior.invert ? is3rdP : !is3rdP;
+    
+    if (player_is_in_toggled_cam) return RE::BSEventNotifyControl::kContinue;
+
+    //logger::trace("Cell change detected. Toggled.");
+    Modules::Other::funcToggle(is3rdP);
+
+
+    return RE::BSEventNotifyControl::kContinue;
+}
+
+RE::BSEventNotifyControl OurEventSink::ProcessEvent(const SKSE::CameraEvent* a_event,
+                                                    RE::BSTEventSource<SKSE::CameraEvent>*) {
+
+    if (!a_event) return RE::BSEventNotifyControl::kContinue;
+    if (!Modules::Other::FixZoom.enabled) return RE::BSEventNotifyControl::kContinue;
+    if (!RE::PlayerCamera::GetSingleton()->IsInThirdPerson()) return RE::BSEventNotifyControl::kContinue;
+    const auto thirdPersonState = static_cast<RE::ThirdPersonState*>(RE::PlayerCamera::GetSingleton()->cameraStates[RE::CameraState::kThirdPerson].get());
+    if (!thirdPersonState) return RE::BSEventNotifyControl::kContinue;
+    if (thirdPersonState->currentZoomOffset != thirdPersonState->targetZoomOffset) return RE::BSEventNotifyControl::kContinue;
+    if (thirdPersonState->currentZoomOffset == Modules::Other::fix_zoom) return RE::BSEventNotifyControl::kContinue;
+    //logger::trace("CameraEvent: FixZoom");
+    thirdPersonState->targetZoomOffset = Modules::Other::fix_zoom;
 
     return RE::BSEventNotifyControl::kContinue;
 }

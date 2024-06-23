@@ -2,6 +2,10 @@
 
 #include "Hooks.h"
 
+void HelpMarker(const char* desc);
+
+const ImGuiTableFlags table_flags =
+    ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
 
 namespace MCP {
 
@@ -22,11 +26,26 @@ namespace MCP {
     
     namespace Dialogue {
         void Render();
-
-
         namespace Toggle{
             inline int selected_device = 0;
         };
+        void RenderEnableDisableAll();
 	};
     
+    namespace Combat {
+        using namespace Modules::Combat;
+        void Render();
+        void __Render(bool& enabled, bool& invert, bool& revert, bool& instant, const std::string& title,
+                      const std::string& label);
+        void RenderEnableDisableAll();
+    };
+
+    namespace Other {
+        using namespace Modules::Other;
+    	void Render();
+        inline void RenderCheckBox(const std::string& title, const std::string& label, bool& enabled);
+        void __Render(bool& enabled, bool& invert, const std::string& title,
+					  const std::string& label);
+		void RenderEnableDisableAll();
+    };
 };
