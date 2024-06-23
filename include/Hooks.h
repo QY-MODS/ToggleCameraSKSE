@@ -26,11 +26,14 @@ namespace Combat {
         static void thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* a_cell);
 		static inline REL::Relocation<decltype(thunk)> func;
 
-        static bool __Killmove(RE::Actor* a_actor);
-        static bool __WeaponDraw(RE::Actor* a_actor);
-        static bool __BowDraw(RE::Actor* a_actor);
-        static bool __MagicDraw(RE::Actor* a_actor);
-        static bool __MagicCast(RE::Actor* a_actor);
+        bool __Killmove(RE::Actor* a_actor);
+        bool __WeaponDraw(RE::Actor* a_actor);
+        bool __Sneak(RE::Actor* a_actor);
+        bool __BowDraw(RE::Actor* a_actor);
+        bool __MagicDraw(RE::Actor* a_actor);
+        bool __MagicCast(RE::Actor* a_actor);
+
+        inline bool sneaked = false;
 	};
 
 	void InstallHooks();

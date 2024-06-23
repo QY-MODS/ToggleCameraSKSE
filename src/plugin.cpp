@@ -13,6 +13,8 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
             logger::info("Adding event sink for dialogue menu auto zoom.");
             ui->AddEventSink<RE::MenuOpenCloseEvent>(eventsink);
         }
+        RE::PlayerCharacter::GetSingleton()->AsBGSActorCellEventSource()->AddEventSink(eventsink);
+        SKSE::GetCameraEventSource()->AddEventSink(eventsink);
         // MCP
         MCP::Register();
         logger::info("MCP registered.");
@@ -44,6 +46,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     logger::info("Plugin loaded");
     SKSE::Init(skse);
     Settings::LoadSettings();
+    InitializeSerialization();
     SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
     Hooks::Install();
     return true;

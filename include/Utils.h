@@ -16,22 +16,12 @@
 #include "SimpleIni.h"
 #include "rapidjson/document.h"
 #include <rapidjson/stringbuffer.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/error/en.h>
 #include <rapidjson/writer.h>
-#include "SKSEMenuFramework.h"
+#include "SKSEMCP/SKSEMenuFramework.hpp"
 #include <ClibUtil/editorID.hpp>
 
-
-static void HelpMarker(const char* desc) {
-    ImGui::TextDisabled("(?)");
-    if (ImGui::BeginItemTooltip()) {
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-}
-
-static ImGuiTableFlags table_flags = ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
 
 namespace Utilities {
 
@@ -53,4 +43,9 @@ namespace Utilities {
 
     inline uint32_t GetCombatState() { return RE::PlayerCharacter::GetSingleton()->IsInCombat(); }
 
+    inline std::string formatFloatToString(float value, int precision) {
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(precision) << value;
+        return out.str();
+    }
 };

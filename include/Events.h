@@ -2,8 +2,9 @@
 #include "UI.h"
 
 class OurEventSink : public RE::BSTEventSink<RE::MenuOpenCloseEvent>, 
-    public RE::BSTEventSink<RE::InputEvent*> 
-{
+    public RE::BSTEventSink<RE::InputEvent*>, 
+    public RE::BSTEventSink<RE::BGSActorCellEvent>,
+    public RE::BSTEventSink<SKSE::CameraEvent> {
     
     using InputEvents = RE::InputEvent*;
 
@@ -30,4 +31,10 @@ public:
                                           RE::BSTEventSource<RE::MenuOpenCloseEvent>*);
 
     RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* evns, RE::BSTEventSource<RE::InputEvent*>*);
+
+    RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event,
+										  RE::BSTEventSource<RE::BGSActorCellEvent>*);
+
+    RE::BSEventNotifyControl ProcessEvent(const SKSE::CameraEvent* a_event, 
+										  RE::BSTEventSource<SKSE::CameraEvent>*);
 };

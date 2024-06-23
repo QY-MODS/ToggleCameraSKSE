@@ -51,6 +51,10 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
         thirdPersonState->savedZoomOffset = savedZoomOffset;
     }
 
+    //logger::trace("currentZoomOffset: {}, targetZoomOffset: {}, savedZoomOffset: {}, pitch: {}",
+    //              thirdPersonState->currentZoomOffset, thirdPersonState->targetZoomOffset,
+    //              thirdPersonState->savedZoomOffset, thirdPersonState->pitchZoomOffset);
+
     int shouldToggle = 0;
     bool gradual_ = false;
 
@@ -77,6 +81,12 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
             logger::trace("Combat detected. Should toggle.");
         }
     }
+
+    // sneak handling
+    if (ToggleSneak && !__Sneak(a_actor)) {
+		logger::trace("Sneak detected. Toggled.");
+		return func(a_actor, a_zPos, a_cell);
+	}
 
     // bow first person aiming handling
     if (ToggleBowDraw && !__BowDraw(a_actor)) {
@@ -111,6 +121,22 @@ bool Combat::OnActorUpdate::__Killmove(RE::Actor* a_actor) {
         return false;
     }
     return true;
+}
+
+bool Combat::OnActorUpdate::__Sneak(RE::Actor* a_actor) {
+    const auto is_sneaking = a_actor->IsSneaking();
+    if (is_sneaking == sneaked) return true;
+    sneaked = is_sneaking;
+    bool is_3rd_p = Is3rdP();
+    if (bool player_is_in_toggled_cam = ToggleSneak.invert ? !is_3rd_p : is_3rd_p;
+		is_sneaking && !player_is_in_toggled_cam) {
+		funcToggle(!ToggleSneak.instant);
+		return false;
+	} else if (!is_sneaking && player_is_in_toggled_cam) {
+		funcToggle(!ToggleSneak.instant);
+		return false;
+	}
+	return true;
 }
 
 bool Combat::OnActorUpdate::__WeaponDraw(RE::Actor* a_actor) { 
