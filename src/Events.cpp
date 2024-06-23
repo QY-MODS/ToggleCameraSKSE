@@ -147,9 +147,11 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(const SKSE::CameraEvent* a_e
     if (!RE::PlayerCamera::GetSingleton()->IsInThirdPerson()) return RE::BSEventNotifyControl::kContinue;
     const auto thirdPersonState = static_cast<RE::ThirdPersonState*>(RE::PlayerCamera::GetSingleton()->cameraStates[RE::CameraState::kThirdPerson].get());
     if (!thirdPersonState) return RE::BSEventNotifyControl::kContinue;
-    if (thirdPersonState->currentZoomOffset != thirdPersonState->targetZoomOffset) return RE::BSEventNotifyControl::kContinue;
+    if (std::abs(thirdPersonState->currentZoomOffset - thirdPersonState->targetZoomOffset)>0.001){
+        return RE::BSEventNotifyControl::kContinue;
+    }
     if (thirdPersonState->currentZoomOffset == Modules::Other::fix_zoom) return RE::BSEventNotifyControl::kContinue;
-    //logger::trace("CameraEvent: FixZoom");
+    logger::trace("CameraEvent: FixZoom");
     thirdPersonState->targetZoomOffset = Modules::Other::fix_zoom;
 
     return RE::BSEventNotifyControl::kContinue;

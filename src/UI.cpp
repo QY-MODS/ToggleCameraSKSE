@@ -230,7 +230,7 @@ void MCP::Other::Render(){
         ImGui::SameLine();
         ImGui::SetNextItemWidth(100);
         if (ImGui::BeginCombo("##FixZoomValue", Utilities::formatFloatToString(fix_zoom,1).c_str())) {
-            for (int n = 2; n < 11; ++n) {
+            for (int n = 0; n < 11; ++n) {
                 const bool is_selected = std::abs(fix_zoom - n/10.f)<0.0000001f;
                 if (ImGui::Selectable(Utilities::formatFloatToString(n/10.f,1).c_str(), is_selected)) fix_zoom = n / 10.f;
                 if (is_selected) {
