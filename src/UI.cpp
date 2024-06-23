@@ -228,9 +228,8 @@ void MCP::Other::Render(){
 
         RenderCheckBox(title, "FixZoom", FixZoom.enabled);
         ImGui::SameLine();
-        HelpMarker("Upon transitioning into 3rd person, the selected zoom level will be applied.");
-        ImGui::SetNextItemWidth(200);
-        if (ImGui::BeginCombo("FixZoom##value", Utilities::formatFloatToString(fix_zoom,1).c_str())) {
+        ImGui::SetNextItemWidth(100);
+        if (ImGui::BeginCombo("##FixZoomValue", Utilities::formatFloatToString(fix_zoom,1).c_str())) {
             for (int n = 2; n < 11; ++n) {
                 const bool is_selected = std::abs(fix_zoom - n/10.f)<0.0000001f;
                 if (ImGui::Selectable(Utilities::formatFloatToString(n/10.f,1).c_str(), is_selected)) fix_zoom = n / 10.f;
@@ -240,6 +239,8 @@ void MCP::Other::Render(){
             }
             ImGui::EndCombo();
         }
+        ImGui::SameLine();
+        HelpMarker("Upon transitioning into 3rd person, the selected zoom level will be applied.");
 	}
 }
 void MCP::Other::RenderCheckBox(const std::string& title, const std::string& label, bool& enabled){
