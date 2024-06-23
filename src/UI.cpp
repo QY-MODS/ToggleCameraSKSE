@@ -127,6 +127,10 @@ void MCP::Dialogue::Render(){
         ImGui::Text("");
         ImGui::SameLine();
         ImGui::Checkbox((std::string("Invert") + "##" + title).c_str(), &Modules::Dialogue::AutoToggle.invert);
+        ImGui::SameLine();
+        ImGui::Checkbox((std::string("Revert") + "##" + title).c_str(), &Modules::Dialogue::AutoToggle.revert);
+        ImGui::SameLine();
+        HelpMarker("Default is from 3rd to 1st.");
 
         ImGui::Checkbox(std::format("DisallowZoomPOVSwitch##{}",title).c_str(), &Modules::Dialogue::DisallowZoomPOVSwitch.enabled);
     }

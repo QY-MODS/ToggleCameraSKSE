@@ -62,8 +62,7 @@ RE::BSEventNotifyControl OurEventSink::ProcessEvent(const RE::MenuOpenCloseEvent
 			Modules::Dialogue::funcToggle();
 		}
     
-    }
-    else if (!event->opening) {
+    } else if (!event->opening && Modules::Dialogue::AutoToggle.revert) {
         if (RE::PlayerCamera::GetSingleton()->IsInFirstPerson() && !Modules::Dialogue::AutoToggle.invert) {
             Modules::Dialogue::funcToggle();
         } else if (RE::PlayerCamera::GetSingleton()->IsInThirdPerson() && Modules::Dialogue::AutoToggle.invert) {
