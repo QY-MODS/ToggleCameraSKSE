@@ -61,7 +61,7 @@ void MCP::RenderZoomLvL(const std::string& title, const std::string& label, Feat
     ImGui::SetNextItemWidth(100);
     float& zoom_lvl = feat.fix_zoom.zoom_lvl;
     if (ImGui::BeginCombo(("##FixZoomValue" + label).c_str(), Utilities::formatFloatToString(zoom_lvl, 1).c_str())) {
-        for (int n = 0; n < 11; ++n) {
+        for (int n = -2; n < 11; ++n) {
             const bool is_selected = std::abs(zoom_lvl - n / 10.f) < 0.0000001f;
             if (ImGui::Selectable(Utilities::formatFloatToString(n / 10.f, 1).c_str(), is_selected)) zoom_lvl = n / 10.f;
             if (is_selected) ImGui::SetItemDefaultFocus();
