@@ -23,7 +23,12 @@ void __stdcall MCP::RenderLog() {
     }
 }
 
-void MCP::RenderDeviceKeyCombo(const std::string& title,const std::string& label,bool& enabled, int& selected_device, std::map<int, int>& keymap) {
+void MCP::RenderCheckBox(const std::string& title, const std::string& label, bool& enabled) {
+    ImGui::Checkbox((label + "##" + title).c_str(), &enabled);
+}
+
+void MCP::RenderDeviceKeyCombo(const std::string& title, const std::string& label, bool& enabled, int& selected_device,
+                               std::map<int, int>& keymap) {
     
     
     ImGui::Checkbox((label + ":##" + title).c_str(), &enabled);
@@ -48,8 +53,22 @@ void MCP::RenderDeviceKeyCombo(const std::string& title,const std::string& label
         }
         ImGui::EndCombo();
     }
-    
 }
+
+void MCP::RenderZoomLvL(const std::string& title, const std::string& label, Feature& feat) {
+    RenderCheckBox(title + label, "FixZoom", feat.fix_zoom.enabled);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(100);
+    float& zoom_lvl = feat.fix_zoom.zoom_lvl;
+    if (ImGui::BeginCombo(("##FixZoomValue" + label).c_str(), Utilities::formatFloatToString(zoom_lvl, 1).c_str())) {
+        for (int n = 0; n < 11; ++n) {
+            const bool is_selected = std::abs(zoom_lvl - n / 10.f) < 0.0000001f;
+            if (ImGui::Selectable(Utilities::formatFloatToString(n / 10.f, 1).c_str(), is_selected)) zoom_lvl = n / 10.f;
+            if (is_selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+};
 
 void MCP::Register(){
     if (!SKSEMenuFramework::IsInstalled()) {
@@ -133,6 +152,8 @@ void MCP::Dialogue::Render(){
         HelpMarker("Default is from 3rd to 1st.");
 
         ImGui::Checkbox(std::format("DisallowZoomPOVSwitch##{}",title).c_str(), &Modules::Dialogue::DisallowZoomPOVSwitch.enabled);
+
+        RenderZoomLvL("Dialogue", "Toggle", Modules::Dialogue::Toggle);
     }
     
 }
@@ -161,40 +182,40 @@ void MCP::Combat::Render() {
     std::string title = "Combat";
     if (ImGui::CollapsingHeader((title + "##Settings").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
         RenderEnableDisableAll();
-        __Render(ToggleCombat.enabled, ToggleCombat.invert, ToggleCombat.revert,ToggleCombat.instant, title, "ToggleCombatEnter");
+        __Render(ToggleCombat,title,"ToggleCombatEnter");
         ImGui::SameLine();
         HelpMarker("Default is from 1st to 3rd.");
-        __Render(ToggleWeapon.enabled, ToggleWeapon.invert, ToggleWeapon.revert,ToggleWeapon.instant, title, "ToggleWeaponDraw");
+        __Render(ToggleWeapon,title,"ToggleWeaponDraw");
         ImGui::SameLine();
         HelpMarker("Default is from 1st to 3rd.");
-        __Render(ToggleBowDraw.enabled, ToggleBowDraw.invert, ToggleBowDraw.revert,ToggleBowDraw.instant, title, "ToggleBowDraw");
+        __Render(ToggleBowDraw, title,"ToggleBowDraw");
         ImGui::SameLine();
         HelpMarker("Default is from 3rd to 1st.");
-        __Render(ToggleMagicWield.enabled, ToggleMagicWield.invert, ToggleMagicWield.revert, ToggleMagicWield.instant,title,"ToggleMagicWield");
+        __Render(ToggleMagicWield,title,"ToggleMagicWield");
         ImGui::SameLine();
         HelpMarker("Default is from 3rd to 1st.");
-        __Render(ToggleMagicCast.enabled, ToggleMagicCast.invert, ToggleMagicCast.revert, ToggleMagicCast.instant,title,"ToggleMagicCast");
+        __Render(ToggleMagicCast,title,"ToggleMagicCast");
         ImGui::SameLine();
         HelpMarker("Default is from 3rd to 1st.");
-        __Render(ToggleSneak.enabled, ToggleSneak.invert, ToggleSneak.revert, ToggleSneak.instant,title,"ToggleSneak");
+        __Render(ToggleSneak,title,"ToggleSneak");
         ImGui::SameLine();
         HelpMarker("Default is from 1st to 3rd.");
-
     }
 }
 
-void MCP::Combat::__Render(bool& enabled, bool& invert, bool& revert, bool& instant, const std::string& title,
-                           const std::string& label) {
-    ImGui::Checkbox((label + "##" + title).c_str(), &enabled);
+void MCP::Combat::__Render(Feature& feat, const std::string& title, const std::string& label) {
+    ImGui::Checkbox((label + "##" + title).c_str(), &feat.enabled);
     ImGui::SameLine();
-    ImGui::SetCursorPosX(270);
+    ImGui::SetCursorPosX(250);
     ImGui::Text("");
     ImGui::SameLine();
-    ImGui::Checkbox((std::string("Invert") + "##" + title+label).c_str(), &invert);
+    ImGui::Checkbox((std::string("Invert") + "##" + title + label).c_str(), &feat.invert);
     ImGui::SameLine();
-    ImGui::Checkbox((std::string("Revert") + "##" + title + label).c_str(), &revert);
+    ImGui::Checkbox((std::string("Revert") + "##" + title + label).c_str(), &feat.revert);
     ImGui::SameLine();
-    ImGui::Checkbox((std::string("Instant") + "##" + title + label).c_str(), &instant);
+    ImGui::Checkbox((std::string("Instant") + "##" + title + label).c_str(), &feat.instant);
+    ImGui::SameLine();
+    RenderZoomLvL(title, label, feat);
 }
 
 void MCP::Combat::RenderEnableDisableAll() {
@@ -230,26 +251,12 @@ void MCP::Other::Render(){
         ImGui::SameLine();
         HelpMarker("Default is from 3rd to 1st.");
 
-        RenderCheckBox(title, "FixZoom", FixZoom.enabled);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100);
-        if (ImGui::BeginCombo("##FixZoomValue", Utilities::formatFloatToString(fix_zoom,1).c_str())) {
-            for (int n = 0; n < 11; ++n) {
-                const bool is_selected = std::abs(fix_zoom - n/10.f)<0.0000001f;
-                if (ImGui::Selectable(Utilities::formatFloatToString(n/10.f,1).c_str(), is_selected)) fix_zoom = n / 10.f;
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
+        RenderZoomLvL("Other", "FixZoom", FixZoom);
         ImGui::SameLine();
         HelpMarker("Upon transitioning into 3rd person, the selected zoom level will be applied.");
 	}
 }
-void MCP::Other::RenderCheckBox(const std::string& title, const std::string& label, bool& enabled){
-    ImGui::Checkbox((label + "##" + title).c_str(), &enabled);
-};
+
 void MCP::Other::__Render(bool& enabled, bool& invert, const std::string& title,
                           const std::string& label){
     RenderCheckBox(title, label, enabled);
@@ -268,13 +275,13 @@ void MCP::Other::RenderEnableDisableAll(){
     if (ImGui::Button("Enable All##Other")) {
         ToggleCellChangeExterior.enabled = true;
         ToggleCellChangeInterior.enabled = true;
-        FixZoom.enabled = true;
+        FixZoom.fix_zoom.enabled = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Disable All##Other")) {
         ToggleCellChangeExterior.enabled = false;
         ToggleCellChangeInterior.enabled = false;
-        FixZoom.enabled = false;
+        FixZoom.fix_zoom.enabled = false;
 	}
 };
 

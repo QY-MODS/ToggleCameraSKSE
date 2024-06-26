@@ -22,8 +22,10 @@ namespace MCP {
     //void __stdcall RenderStatus();
     void __stdcall RenderLog();
 
+    void RenderCheckBox(const std::string& title, const std::string& label, bool& enabled);
     void RenderDeviceKeyCombo(const std::string& title,const std::string& label,bool& enabled, int& selected_device, std::map<int, int>& keymap);
-    
+    void RenderZoomLvL(const std::string& title, const std::string& label, Feature& feat);
+
     namespace Dialogue {
         void Render();
         namespace Toggle{
@@ -35,15 +37,13 @@ namespace MCP {
     namespace Combat {
         using namespace Modules::Combat;
         void Render();
-        void __Render(bool& enabled, bool& invert, bool& revert, bool& instant, const std::string& title,
-                      const std::string& label);
+        void __Render(Feature& feat, const std::string& title, const std::string& label);
         void RenderEnableDisableAll();
     };
 
     namespace Other {
         using namespace Modules::Other;
     	void Render();
-        inline void RenderCheckBox(const std::string& title, const std::string& label, bool& enabled);
         void __Render(bool& enabled, bool& invert, const std::string& title,
 					  const std::string& label);
 		void RenderEnableDisableAll();

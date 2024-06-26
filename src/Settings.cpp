@@ -77,7 +77,7 @@ void Modules::Dialogue::funcToggle() {
 	}
     if (plyr_c->IsInFirstPerson()) {
         plyr_c->ForceThirdPerson();
-        thirdPersonState->targetZoomOffset = thirdPersonState->savedZoomOffset;
+        thirdPersonState->targetZoomOffset = Toggle.fix_zoom.enabled ? Toggle.fix_zoom.zoom_lvl: thirdPersonState->savedZoomOffset;
     } else if (plyr_c->IsInThirdPerson()) {
         thirdPersonState->savedZoomOffset = thirdPersonState->currentZoomOffset;
         if (!Toggle.instant) {
@@ -200,7 +200,7 @@ bool Modules::Combat::Is3rdP() {
     else return plyr_c->IsInThirdPerson();
 }
 
-void Modules::Combat::funcToggle(bool gradual, float extra_offset) {
+void Modules::Combat::funcToggle(Feature& feat) {
     auto plyr_c = RE::PlayerCamera::GetSingleton();
     if (!plyr_c) {
 		logger::error("PlayerCamera is null.");
@@ -216,9 +216,9 @@ void Modules::Combat::funcToggle(bool gradual, float extra_offset) {
     }
     if (!is3rdP) {
         plyr_c->ForceThirdPerson();
-        thirdPersonState->targetZoomOffset = savedZoomOffset + extra_offset;
+        thirdPersonState->targetZoomOffset = feat.fix_zoom.enabled ? feat.fix_zoom.zoom_lvl : savedZoomOffset;
     } 
-    else if (gradual) {
+    else if (!feat.instant) {
         listen_gradual_zoom = true;
         thirdPersonState->targetZoomOffset = -0.2f;
     } 
@@ -342,8 +342,6 @@ void Modules::Other::LoadFeatures() {
 
     ToggleCellChangeInterior.enabled = false;
     ToggleCellChangeInterior.instant = false;
-    
-    FixZoom.enabled = false;
 }
 
 void Feature::to_json(rapidjson::Value& j, rapidjson::Document::AllocatorType& a) const {
@@ -359,6 +357,8 @@ void Feature::to_json(rapidjson::Value& j, rapidjson::Document::AllocatorType& a
         keymap_array.PushBack(keymap_obj, a);
     }
     j.AddMember("keymap", keymap_array, a);
+    j.AddMember("fixed_zoom_enabled", fix_zoom.enabled, a);
+    j.AddMember("fixed_zoom_lvl", fix_zoom.zoom_lvl, a);
 }
 
 void Feature::from_json(const rapidjson::Value& j) {
@@ -370,4 +370,6 @@ void Feature::from_json(const rapidjson::Value& j) {
     for (const auto& keymap_obj : keymap_array.GetArray()) {
         keymap[keymap_obj["device"].GetInt()] = keymap_obj["key"].GetInt();
     }
+    fix_zoom.enabled = j["fixed_zoom_enabled"].GetBool();
+    fix_zoom.zoom_lvl = j["fixed_zoom_lvl"].GetFloat();
 }

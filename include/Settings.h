@@ -19,12 +19,19 @@ enum Purpose {
 	kZoomOut,
 };
 
+struct FixedZoom {
+	float zoom_lvl = 0.2f;
+	bool enabled = false;
+};
+
 struct Feature {
 	//std::string name;
 	bool enabled=false;
 	bool instant=false;
 	bool invert=false;
 	bool revert=true;
+
+	FixedZoom fix_zoom;
 
 	Purpose purpose = kNone;
     std::map<int, int> keymap;
@@ -97,7 +104,7 @@ namespace Modules {
 
 		bool Is3rdP();
 
-		void funcToggle(bool gradual, float extra_offset = 0.f);
+		void funcToggle(Feature& feat);
 
 		uint32_t CamSwitchHandling(uint32_t newstate, bool third2first, bool switch_back);
 		
@@ -116,7 +123,6 @@ namespace Modules {
 		void funcToggle(bool is3rdP, float extra_offset = 0.f);
 
 		inline bool is_exterior = false;
-		inline float fix_zoom = 0.5f;
 
 		rapidjson::Value to_json(Document::AllocatorType& a);
 		void from_json(const rapidjson::Value& j);

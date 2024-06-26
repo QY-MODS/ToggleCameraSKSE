@@ -55,8 +55,6 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
     //              thirdPersonState->currentZoomOffset, thirdPersonState->targetZoomOffset,
     //              thirdPersonState->savedZoomOffset, thirdPersonState->pitchZoomOffset);
 
-    int shouldToggle = 0;
-    bool gradual_ = false;
 
     // killmove handling
     if (!__Killmove(a_actor)) {
@@ -64,11 +62,13 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
         return func(a_actor, a_zPos, a_cell);
     }
 
+    int shouldToggleWeapon = 0;
+    int shouldToggleCombat = 0;
+
     // weapon draw handling
     if (ToggleWeapon && (!IsMagicEquipped() || !ToggleMagicWield) && __WeaponDraw(a_actor)) {
         logger::trace("Weapon draw detected. Should toggle.");
-        shouldToggle += 1;
-        gradual_ = gradual_ ? gradual_ : !ToggleWeapon.instant;
+        shouldToggleWeapon += 1;
     }
 
     // combat handling
@@ -76,8 +76,7 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
         oldstate_c = oldstate_c != 0 ? 0 : 1;
         const auto temp = CamSwitchHandling(oldstate_c, ToggleCombat.invert, ToggleCombat.revert);
         if (temp > 0) {
-            shouldToggle += temp;
-            gradual_ = gradual_ ? gradual_ : !ToggleCombat.instant;
+            shouldToggleCombat += temp;
             logger::trace("Combat detected. Should toggle.");
         }
     }
@@ -108,7 +107,8 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
         }
     }
 
-    if (shouldToggle) funcToggle(gradual_);
+    if (shouldToggleWeapon) funcToggle(ToggleWeapon);
+    else if (shouldToggleCombat) funcToggle(ToggleCombat);
 
     return func(a_actor, a_zPos, a_cell);
 }
@@ -130,10 +130,10 @@ bool Combat::OnActorUpdate::__Sneak(RE::Actor* a_actor) {
     bool is_3rd_p = Is3rdP();
     if (bool player_is_in_toggled_cam = ToggleSneak.invert ? !is_3rd_p : is_3rd_p;
 		is_sneaking && !player_is_in_toggled_cam) {
-		funcToggle(!ToggleSneak.instant);
+		funcToggle(ToggleSneak);
 		return false;
 	} else if (!is_sneaking && player_is_in_toggled_cam) {
-		funcToggle(!ToggleSneak.instant);
+		funcToggle(ToggleSneak);
 		return false;
 	}
 	return true;
@@ -153,11 +153,11 @@ bool Combat::OnActorUpdate::__BowDraw(RE::Actor* a_actor) {
     bool is_3rd_p = Is3rdP();
     if (bool player_is_in_toggled_cam = ToggleBowDraw.invert ? is_3rd_p : !is_3rd_p;
         !player_is_in_toggled_cam && attack_state == 8) {
-        funcToggle(!ToggleBowDraw.instant);
+        funcToggle(ToggleBowDraw);
         bow_cam_switched = true;
         return false;
     } else if (bow_cam_switched && (!attack_state || attack_state == 13) && player_is_in_toggled_cam && ToggleBowDraw.revert) {
-        funcToggle(!ToggleBowDraw.instant);
+        funcToggle(ToggleBowDraw);
         bow_cam_switched = false;
         return false;
     }
@@ -171,10 +171,10 @@ bool Combat::OnActorUpdate::__MagicDraw(RE::Actor* a_actor) {
         oldstate_m = magic_state;
         if (bool player_is_in_toggled_cam = ToggleMagicWield.invert ? is_3rd_p : !is_3rd_p;
             magic_state == 5 && player_is_in_toggled_cam && ToggleMagicWield.revert) {
-            funcToggle(!ToggleMagicWield.instant);
+            funcToggle(ToggleMagicWield);
             return false;
         } else if (magic_state == 2 && !player_is_in_toggled_cam) {
-            funcToggle(!ToggleMagicWield.instant);
+            funcToggle(ToggleMagicWield);
             return false;
         }
     }
@@ -185,11 +185,11 @@ bool Combat::OnActorUpdate::__MagicCast(RE::Actor*) {
     bool is_3rd_p = Is3rdP();
     if (bool player_is_in_toggled_cam = ToggleMagicCast.invert ? is_3rd_p : !is_3rd_p;
         !IsCasting() && player_is_in_toggled_cam && ToggleMagicCast.revert && casting_switched) {
-        funcToggle(!ToggleMagicCast.instant);
+        funcToggle(ToggleMagicCast);
         casting_switched = false;
         return false;
     } else if (IsCasting() && !player_is_in_toggled_cam) {
-        funcToggle(!ToggleMagicCast.instant);
+        funcToggle(ToggleMagicCast);
         casting_switched = true;
         return false;
     }
