@@ -1,11 +1,14 @@
 #include "Events.h"
 
+bool eventsinks_added = false;
+
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         // Start
     }
     if (message->type == SKSE::MessagingInterface::kNewGame || message->type == SKSE::MessagingInterface::kPostLoadGame) {
         // Post-load
+        if (eventsinks_added) return;
         auto* eventsink = OurEventSink::GetSingleton();
         logger::info("Adding event sink for dialogue menu zoom.");
         RE::BSInputDeviceManager::GetSingleton()->AddEventSink(eventsink);
@@ -15,6 +18,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
         }
         RE::PlayerCharacter::GetSingleton()->AsBGSActorCellEventSource()->AddEventSink(eventsink);
         SKSE::GetCameraEventSource()->AddEventSink(eventsink);
+        eventsinks_added = true;
         // MCP
         MCP::Register();
         logger::info("MCP registered.");
