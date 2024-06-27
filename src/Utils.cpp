@@ -35,25 +35,14 @@ std::vector<std::string> Utilities::ReadLogFile() {
 
     return logLines;
 }
-bool Utilities::IsMagicEquipped() { 
-    auto player_char = RE::PlayerCharacter::GetSingleton();
-    auto equipped_obj_L = player_char->GetEquippedObject(true);
-    auto equipped_obj_R = player_char->GetEquippedObject(false);
-    bool L_is_magic = equipped_obj_L ? equipped_obj_L->IsMagicItem() : false;
-    bool R_is_magic = equipped_obj_R ? equipped_obj_R->IsMagicItem() : false;
-    return L_is_magic || R_is_magic;
+
+std::string Utilities::kDelivery2Char(const int delivery) { 
+    switch (delivery) {
+		case 0: return "Self";
+		case 1: return "Touch";
+		case 2: return "Aimed";
+		case 3: return "Target";
+		case 4: return "Target Location";
+		default: return "Unknown";
+	}
 }
-bool Utilities::IsCasting() {
-    if (!IsMagicEquipped()) return false;
-    auto player_char = RE::PlayerCharacter::GetSingleton();
-    auto equipped_obj_L = player_char->GetEquippedObject(true);
-    auto equipped_obj_R = player_char->GetEquippedObject(false);
-    RE::MagicItem* equipped_obj_L_MI = nullptr;
-    RE::MagicItem* equipped_obj_R_MI = nullptr;
-    if (equipped_obj_L) equipped_obj_L_MI = equipped_obj_L->As<RE::MagicItem>();
-    if (equipped_obj_R) equipped_obj_R_MI = equipped_obj_R->As<RE::MagicItem>();
-    bool is_casting = false;
-    if (equipped_obj_L_MI && player_char->IsCasting(equipped_obj_L_MI)) is_casting = true;
-    if (equipped_obj_R_MI && player_char->IsCasting(equipped_obj_R_MI)) is_casting = true;
-    return is_casting;
-};

@@ -37,10 +37,6 @@ namespace Utilities {
 
     };
 
-    bool IsMagicEquipped();
-
-    bool IsCasting();
-
     inline uint32_t GetCombatState() { return RE::PlayerCharacter::GetSingleton()->IsInCombat(); }
 
     inline std::string formatFloatToString(float value, int precision) {
@@ -48,4 +44,6 @@ namespace Utilities {
         out << std::fixed << std::setprecision(precision) << value;
         return out.str();
     }
+
+    std::string kDelivery2Char(const int delivery);
 };

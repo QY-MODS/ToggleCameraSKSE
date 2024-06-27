@@ -21,6 +21,12 @@ namespace Combat {
 
 	const uint8_t n_hooks = 1;
 	const size_t trampoline_size = n_hooks * 14;
+    inline int spell_delivery_L=-1;
+    inline int spell_delivery_R=-1;
+
+    bool IsMagicEquipped();
+
+    bool IsCasting();
 
 	namespace OnActorUpdate {
         static void thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* a_cell);

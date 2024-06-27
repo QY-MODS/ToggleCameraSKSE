@@ -291,6 +291,14 @@ void Modules::Combat::LoadFeatures() {
     ToggleMagicWield.enabled = true;
     ToggleMagicCast.enabled = true;
     ToggleSneak.enabled = true;
+
+    // 0: do not ignore, 1: ignore if 1+ hand, 2: ignore if 2 hands
+    ToggleMagicWield.keymap[-1] = 0; // None
+    ToggleMagicWield.keymap[0] = 0; // Self
+    ToggleMagicWield.keymap[1] = 0; // Touch
+    ToggleMagicCast.keymap[2] = 0; // Aimed
+    ToggleMagicCast.keymap[3] = 0; // Target Actor
+    ToggleMagicCast.keymap[4] = 0; // Target Location
 }
 
 void Modules::Other::funcToggle(bool is3rdP, float extra_offset){
