@@ -43,6 +43,14 @@ void Settings::SaveSettings(){
 
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
+    rapidjson::Value version(rapidjson::kObjectType);
+    version.AddMember("major", Utilities::plugin_version.major(), allocator);
+    version.AddMember("minor", Utilities::plugin_version.minor(), allocator);
+    version.AddMember("patch", Utilities::plugin_version.patch(), allocator);
+    version.AddMember("build", Utilities::plugin_version.build(), allocator);
+
+    doc.AddMember("plugin_version", version, allocator);
+
     doc.AddMember("dialogue", Modules::Dialogue::to_json(allocator), allocator);
     doc.AddMember("combat", Modules::Combat::to_json(allocator), allocator);
     doc.AddMember("other", Modules::Other::to_json(allocator), allocator);

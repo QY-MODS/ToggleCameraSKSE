@@ -26,6 +26,7 @@
 namespace Utilities {
 
     const auto mod_name = static_cast<std::string>(SKSE::PluginDeclaration::GetSingleton()->GetName());
+    const auto plugin_version = SKSE::PluginDeclaration::GetSingleton()->GetVersion();
 
     std::filesystem::path GetLogPath();
 
