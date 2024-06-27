@@ -95,13 +95,30 @@ void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjec
 
     // magic draw and casting handling
     if (IsMagicEquipped()) {
+
+        
         // magic draw handling
-        if (ToggleMagicWield && !__MagicDraw(a_actor)) {
+        bool ignore_L = ToggleMagicWield.keymap[spell_delivery_L] > 0;
+        bool both_hands_L = ToggleMagicWield.keymap[spell_delivery_L] == 2;
+        bool ignore_R = ToggleMagicWield.keymap[spell_delivery_R] > 0;
+        bool both_hands_R = ToggleMagicWield.keymap[spell_delivery_R] == 2;
+        ignore_L = both_hands_L ? ignore_L && spell_delivery_L == spell_delivery_R : ignore_L;
+        ignore_R = both_hands_R ? ignore_R && spell_delivery_L == spell_delivery_R : ignore_R;
+        bool ignore = ignore_L || ignore_R;
+        if (ToggleMagicWield && !ignore && !__MagicDraw(a_actor)) {
             logger::trace("Magic draw detected. Toggled.");
             return func(a_actor, a_zPos, a_cell);
         }
+
         // magic casting handling
-        if (ToggleMagicCast && !__MagicCast(a_actor)) {
+        ignore_L = ToggleMagicCast.keymap[spell_delivery_L] > 0;
+        both_hands_L = ToggleMagicCast.keymap[spell_delivery_L] == 2;
+        ignore_R = ToggleMagicCast.keymap[spell_delivery_R] > 0;
+        both_hands_R = ToggleMagicCast.keymap[spell_delivery_R] == 2;
+        ignore_L = both_hands_L ? ignore_L && spell_delivery_L == spell_delivery_R : ignore_L;
+        ignore_R = both_hands_R ? ignore_R && spell_delivery_L == spell_delivery_R : ignore_R;
+        ignore = ignore_L || ignore_R;
+        if (ToggleMagicCast && !ignore  && !__MagicCast(a_actor)) {
             logger::trace("Magic cast detected. Toggled.");
             return func(a_actor, a_zPos, a_cell);
         }
@@ -194,6 +211,32 @@ bool Combat::OnActorUpdate::__MagicCast(RE::Actor*) {
         return false;
     }
     return true;
+}
+
+bool Combat::IsMagicEquipped() {
+    auto player_char = RE::PlayerCharacter::GetSingleton();
+    auto equipped_obj_L = player_char->GetEquippedObject(true);
+    auto equipped_obj_R = player_char->GetEquippedObject(false);
+    bool L_is_magic = equipped_obj_L ? equipped_obj_L->IsMagicItem() : false;
+    bool R_is_magic = equipped_obj_R ? equipped_obj_R->IsMagicItem() : false;
+    spell_delivery_L = (L_is_magic ? static_cast<int>(equipped_obj_L->As<RE::MagicItem>()->GetDelivery()) : -1);
+    spell_delivery_R = (R_is_magic ? static_cast<int>(equipped_obj_R->As<RE::MagicItem>()->GetDelivery()) : -1);
+    return L_is_magic || R_is_magic;
+}
+
+bool Combat::IsCasting() {
+    if (!IsMagicEquipped()) return false;
+    auto player_char = RE::PlayerCharacter::GetSingleton();
+    auto equipped_obj_L = player_char->GetEquippedObject(true);
+    auto equipped_obj_R = player_char->GetEquippedObject(false);
+    RE::MagicItem* equipped_obj_L_MI = nullptr;
+    RE::MagicItem* equipped_obj_R_MI = nullptr;
+    if (equipped_obj_L) equipped_obj_L_MI = equipped_obj_L->As<RE::MagicItem>();
+    if (equipped_obj_R) equipped_obj_R_MI = equipped_obj_R->As<RE::MagicItem>();
+    bool is_casting = false;
+    if (equipped_obj_L_MI && player_char->IsCasting(equipped_obj_L_MI)) is_casting = true;
+    if (equipped_obj_R_MI && player_char->IsCasting(equipped_obj_R_MI)) is_casting = true;
+    return is_casting;
 }
 
 void Combat::InstallHooks() {

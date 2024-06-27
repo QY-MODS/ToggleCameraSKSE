@@ -36,8 +36,13 @@ namespace MCP {
     
     namespace Combat {
         using namespace Modules::Combat;
+
+        inline int selected_delivery_wield = 0;
+        inline int selected_delivery_cast = 0;
+
         void Render();
         void __Render(Feature& feat, const std::string& title, const std::string& label);
+        void __RenderIgnoreSpell(Feature& combat_magic_feat, const std::string& label, int& selected_delivery);
         void RenderEnableDisableAll();
     };
 

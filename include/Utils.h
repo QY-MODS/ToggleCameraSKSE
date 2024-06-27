@@ -26,6 +26,7 @@
 namespace Utilities {
 
     const auto mod_name = static_cast<std::string>(SKSE::PluginDeclaration::GetSingleton()->GetName());
+    const auto plugin_version = SKSE::PluginDeclaration::GetSingleton()->GetVersion();
 
     std::filesystem::path GetLogPath();
 
@@ -37,10 +38,6 @@ namespace Utilities {
 
     };
 
-    bool IsMagicEquipped();
-
-    bool IsCasting();
-
     inline uint32_t GetCombatState() { return RE::PlayerCharacter::GetSingleton()->IsInCombat(); }
 
     inline std::string formatFloatToString(float value, int precision) {
@@ -48,4 +45,6 @@ namespace Utilities {
         out << std::fixed << std::setprecision(precision) << value;
         return out.str();
     }
+
+    std::string kDelivery2Char(const int delivery);
 };

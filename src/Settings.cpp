@@ -43,6 +43,14 @@ void Settings::SaveSettings(){
 
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
+    rapidjson::Value version(rapidjson::kObjectType);
+    version.AddMember("major", Utilities::plugin_version.major(), allocator);
+    version.AddMember("minor", Utilities::plugin_version.minor(), allocator);
+    version.AddMember("patch", Utilities::plugin_version.patch(), allocator);
+    version.AddMember("build", Utilities::plugin_version.build(), allocator);
+
+    doc.AddMember("plugin_version", version, allocator);
+
     doc.AddMember("dialogue", Modules::Dialogue::to_json(allocator), allocator);
     doc.AddMember("combat", Modules::Combat::to_json(allocator), allocator);
     doc.AddMember("other", Modules::Other::to_json(allocator), allocator);
@@ -291,6 +299,14 @@ void Modules::Combat::LoadFeatures() {
     ToggleMagicWield.enabled = true;
     ToggleMagicCast.enabled = true;
     ToggleSneak.enabled = true;
+
+    // 0: do not ignore, 1: ignore if 1+ hand, 2: ignore if 2 hands
+    ToggleMagicWield.keymap[-1] = 0; // None
+    ToggleMagicWield.keymap[0] = 0; // Self
+    ToggleMagicWield.keymap[1] = 0; // Touch
+    ToggleMagicCast.keymap[2] = 0; // Aimed
+    ToggleMagicCast.keymap[3] = 0; // Target Actor
+    ToggleMagicCast.keymap[4] = 0; // Target Location
 }
 
 void Modules::Other::funcToggle(bool is3rdP, float extra_offset){

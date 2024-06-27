@@ -188,24 +188,28 @@ void MCP::Combat::Render() {
     std::string title = "Combat";
     if (ImGui::CollapsingHeader((title + "##Settings").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
         RenderEnableDisableAll();
+        HelpMarker("Default is from 1st to 3rd.");
+        ImGui::SameLine();
         __Render(ToggleCombat,title,"ToggleCombatEnter");
-        ImGui::SameLine();
         HelpMarker("Default is from 1st to 3rd.");
+        ImGui::SameLine();
         __Render(ToggleWeapon,title,"ToggleWeaponDraw");
-        ImGui::SameLine();
-        HelpMarker("Default is from 1st to 3rd.");
-        __Render(ToggleBowDraw, title,"ToggleBowDraw");
-        ImGui::SameLine();
         HelpMarker("Default is from 3rd to 1st.");
+        ImGui::SameLine();
+        __Render(ToggleBowDraw, title,"ToggleBowDraw");
+        HelpMarker("Default is from 3rd to 1st.");
+        ImGui::SameLine();
         __Render(ToggleMagicWield,title,"ToggleMagicWield");
         ImGui::SameLine();
+        __RenderIgnoreSpell(ToggleMagicWield, "ToggleMagicWield",selected_delivery_wield);
         HelpMarker("Default is from 3rd to 1st.");
+        ImGui::SameLine();
         __Render(ToggleMagicCast,title,"ToggleMagicCast");
         ImGui::SameLine();
-        HelpMarker("Default is from 3rd to 1st.");
-        __Render(ToggleSneak,title,"ToggleSneak");
-        ImGui::SameLine();
+        __RenderIgnoreSpell(ToggleMagicCast, "ToggleMagicCast",selected_delivery_cast);
         HelpMarker("Default is from 1st to 3rd.");
+        ImGui::SameLine();
+        __Render(ToggleSneak,title,"ToggleSneak");
     }
 }
 
@@ -222,6 +226,37 @@ void MCP::Combat::__Render(Feature& feat, const std::string& title, const std::s
     ImGui::Checkbox((std::string("Instant") + "##" + title + label).c_str(), &feat.instant);
     ImGui::SameLine();
     RenderZoomLvL(title, label, feat);
+}
+
+void MCP::Combat::__RenderIgnoreSpell(Feature& combat_magic_feat, const std::string& label, int& selected_delivery) {
+    bool ignore = combat_magic_feat.keymap[selected_delivery] > 0;
+    bool both = combat_magic_feat.keymap[selected_delivery] == 2;
+    ImGui::Checkbox(("Ignore##SpellWithDelivery" + label).c_str(), &ignore);
+    ImGui::SameLine();
+    const std::string& temp_str = Utilities::kDelivery2Char(selected_delivery);
+    ImVec2 textSize;
+    ImGui::CalcTextSize(&textSize, temp_str.c_str(), nullptr, false, -1.0f);
+    ImGui::SetNextItemWidth(textSize.x+55);
+    int new_delivery = selected_delivery;
+    if (ImGui::BeginCombo(("##SpellDelivery" + label).c_str(), temp_str.c_str())) {
+        for (int n = 0; n < 5; ++n) {
+            const bool is_selected = selected_delivery == n;
+            if (ImGui::Selectable((Utilities::kDelivery2Char(n) + "##" + label).c_str(), is_selected)) {
+                new_delivery = n;
+            }
+            if (is_selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (ignore) {
+        ImGui::SameLine();
+        ImGui::Checkbox(("Both##Hands" + label).c_str(), &both);
+    }
+    ImGui::SameLine();
+    HelpMarker("Spell with the selected delivery will be ignored, optionally only when equipped on both hands. To see the both hands option, enable Ignore.");
+    combat_magic_feat.keymap[selected_delivery] = ignore ? both ? 2 : 1  : 0;
+    selected_delivery = new_delivery;
+
 }
 
 void MCP::Combat::RenderEnableDisableAll() {
