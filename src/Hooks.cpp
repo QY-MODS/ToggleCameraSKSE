@@ -221,8 +221,6 @@ bool Combat::IsMagicEquipped() {
     bool R_is_magic = equipped_obj_R ? equipped_obj_R->IsMagicItem() : false;
     spell_delivery_L = (L_is_magic ? static_cast<int>(equipped_obj_L->As<RE::MagicItem>()->GetDelivery()) : -1);
     spell_delivery_R = (R_is_magic ? static_cast<int>(equipped_obj_R->As<RE::MagicItem>()->GetDelivery()) : -1);
-    /*if (L_is_magic) logger::info("spell equipped in left hand with delivery: {}", static_cast<int>(equipped_obj_L->As<RE::MagicItem>()->GetDelivery()));
-    if (R_is_magic) logger::info("spell equipped in right hand with delivery: {}", static_cast<int>(equipped_obj_R->As<RE::MagicItem>()->GetDelivery()));*/
     return L_is_magic || R_is_magic;
 }
 
