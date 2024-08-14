@@ -1,5 +1,9 @@
 #include "Utils.h"
 
+//#ifdef GetObject
+//#undef GetObject
+//#endif
+
 bool Utilities::Menu::IsOpen(const std::string_view menuname) {
     if (auto ui = RE::UI::GetSingleton()) {
         if (ui->IsMenuOpen(menuname)) return true;
@@ -34,6 +38,28 @@ std::vector<std::string> Utilities::ReadLogFile() {
     file.close();
 
     return logLines;
+}
+
+//const bool Utilities::IsVampireLord(const RE::Actor* player) { 
+//    const auto race = player->GetRace();
+//    if (!race) return false;
+//    RE::TESForm** beastform = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(RE::DefaultObjectID::kVampireRace);
+//    return beastform && *beastform ? (*beastform)->GetFormID() == race->GetFormID() : false;
+//}
+//
+//
+//const bool Utilities::IsWerewolf(const RE::Actor* player) {
+//    const auto race = player->GetRace();
+//    if (!race) return false;
+//    RE::TESForm** beastform = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(RE::DefaultObjectID::kWerewolfRace);
+//    return beastform && *beastform ? (*beastform)->GetFormID() == race->GetFormID() : false;
+//}
+
+
+const bool Utilities::IsWerewolf(const RE::Actor* player) {
+    const auto race = player->GetRace();
+    if (!race) return false;
+    return race->GetFormID() == 0x000CDD84;
 }
 
 std::string Utilities::kDelivery2Char(const int delivery) { 

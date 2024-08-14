@@ -35,10 +35,12 @@ void Hooks::Install(){
 };
 
 void Combat::OnActorUpdate::thunk(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* a_cell) {
-    if (!a_actor ||
-        RE::PlayerCharacter::GetSingleton()->GetGameStatsData().byCharGenFlag.any(
-            RE::PlayerCharacter::ByCharGenFlag::kHandsBound) ||
-        RE::PlayerCharacter::GetSingleton()->GetFormID() != a_actor->GetFormID()) {
+    if (auto* plyr_chr = RE::PlayerCharacter::GetSingleton(); 
+        !a_actor || 
+        plyr_chr->GetGameStatsData().byCharGenFlag.any(RE::PlayerCharacter::ByCharGenFlag::kHandsBound) ||
+        plyr_chr->GetFormID() != a_actor->GetFormID() || 
+        //Utilities::IsVampireLord(plyr_chr) ||
+        Utilities::IsWerewolf(plyr_chr)) {
         return func(a_actor, a_zPos, a_cell);
     }
     auto plyr_c = RE::PlayerCamera::GetSingleton();

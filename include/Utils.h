@@ -46,5 +46,11 @@ namespace Utilities {
         return out.str();
     }
 
+    // Returns true if the player is a vampire lord
+    //const bool IsVampireLord(const RE::Actor* player);
+
+    // Returns true if the player is a werewolf
+    const bool IsWerewolf(const RE::Actor* player);
+
     std::string kDelivery2Char(const int delivery);
 };
