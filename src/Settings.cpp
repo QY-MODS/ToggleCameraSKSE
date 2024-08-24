@@ -128,10 +128,10 @@ Purpose Modules::Dialogue::GetPurpose(int a_device, int keyMask) {
     const auto failed = kNone;
     for (const auto& device : SupportedDevices) {
         if (a_device != device) continue;
-        if (keyMask == Toggle.keymap[device]) return kToggle;
+        if (Toggle && keyMask == Toggle.keymap[device]) return kToggle;
         if (keyMask == ZoomEnable.keymap[device]) return kZoomEnable;
-        if (keyMask == ZoomIn.keymap[device]) return kZoomIn;
-        if (keyMask == ZoomOut.keymap[device]) return kZoomOut;
+        if (ZoomIn && keyMask == ZoomIn.keymap[device]) return kZoomIn;
+        if (ZoomOut && keyMask == ZoomOut.keymap[device]) return kZoomOut;
     }
     return failed;
 }
